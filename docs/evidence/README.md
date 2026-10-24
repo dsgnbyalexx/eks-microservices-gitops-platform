@@ -11,10 +11,10 @@ Docker Desktop. **Nothing in this folder comes from a cloud environment or Kuber
 
 | Suite | Tests | Result | Raw output |
 |---|---|---|---|
-| Shared library: health/readiness, request ids, metrics, JWT checks, HTTP client | 21 | All passed | [tests.txt](tests.txt) |
-| auth, catalog, notifications | 15 | All passed | [tests.txt](tests.txt) |
-| payments (idempotency, declines, validation, race) | 17 | All passed | [tests.txt](tests.txt) |
-| orders (orchestration and every failure path, retries, deadline) | 14 | All passed | [tests.txt](tests.txt) |
+| Shared library: health/readiness, request ids, metrics, JWT checks, HTTP client | 18 | All passed | [tests.txt](tests.txt) |
+| auth, catalog, notifications | 14 | All passed | [tests.txt](tests.txt) |
+| payments (idempotency, declines, validation, race) | 19 | All passed | [tests.txt](tests.txt) |
+| orders (orchestration and every failure path, retries, deadline) | 16 | All passed | [tests.txt](tests.txt) |
 | **Total** | **67** | **All passed, 95% line coverage** | [tests.txt](tests.txt) |
 | Lint and formatting (ruff) | — | No issues | [lint.txt](lint.txt) |
 
