@@ -1,0 +1,6 @@
+# Reviewed gitleaks findings that are NOT real secrets. One fingerprint per line.
+#
+# tests/helpers.py once contained a hard-coded FAKE signing key used only by unit
+# tests (never a real credential, never used outside tests). Since fixed: tests now
+# generate the key at runtime. The old commit remains in history, so it is listed here.
+3cb37cfeecc5dc94ef54e3d77774e786ceed0275:tests/helpers.py:generic-api-key:5
