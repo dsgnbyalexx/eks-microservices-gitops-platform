@@ -19,7 +19,9 @@ traefik_restarts() {
     -o jsonpath='{.items[0].status.containerStatuses[0].restartCount}'
 }
 memory_pressure() {
-  docker exec shop-control-plane sh -c 'grep some /proc/pressure/memory | cut -d" " -f2'
+  # Pressure Stall Information may not exist on every kernel; report n/a then.
+  docker exec shop-control-plane sh -c 'grep some /proc/pressure/memory | cut -d" " -f2' 2>/dev/null \
+    || echo "n/a"
 }
 
 helm upgrade shop helm/shop -n "$NS" --reset-values -f helm/shop/values-kind.yaml \
