@@ -145,10 +145,13 @@ jobs:
           helm upgrade --install shop helm/shop -n shop --wait --timeout 5m
           kubectl -n shop get pods -o wide
 
+      # --wait-seconds: pods being ready (helm --wait) does not mean the ingress
+      # controller already routes to them. First CI run: /orders returned 503
+      # "no available server" 0.6 s after Helm finished.
       - name: Smoke test through the Ingress
         env:
           SMOKE_BASE_URL: http://127.0.0.1:18080
-        run: python scripts/smoke_test.py
+        run: python scripts/smoke_test.py --wait-seconds 60
 
       - name: Zero-downtime rolling update under traffic
         env:
