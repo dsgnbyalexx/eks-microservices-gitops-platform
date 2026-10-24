@@ -1,18 +1,18 @@
-# docker compose ps / memory, 2026-10-24T01:48Z
-SERVICE         IMAGE                      STATUS                        PORTS
-auth            shop/auth:local            Up 10 minutes (healthy)       8000/tcp
-catalog         shop/catalog:local         Up 10 minutes (healthy)       8000/tcp
-gateway         nginx:1.29-alpine          Up 10 minutes                 127.0.0.1:18090->8080/tcp
-notifications   shop/notifications:local   Up 19 seconds (healthy)       8000/tcp
-orders          shop/orders:local          Up About a minute (healthy)   8000/tcp
-payments        shop/payments:local        Up 7 seconds (healthy)        8000/tcp
-redis           redis:8.2-alpine           Up 10 minutes (healthy)       6379/tcp
+# docker compose ps / memory (Alpine images), 2026-10-24T03:36Z
+SERVICE         IMAGE                      STATUS                    PORTS
+auth            shop/auth:local            Up 5 minutes (healthy)    8000/tcp
+catalog         shop/catalog:local         Up 5 minutes (healthy)    8000/tcp
+gateway         nginx:1.29-alpine          Up 5 minutes              127.0.0.1:18090->8080/tcp
+notifications   shop/notifications:local   Up 17 seconds (healthy)   8000/tcp
+orders          shop/orders:local          Up 2 minutes (healthy)    8000/tcp
+payments        shop/payments:local        Up 9 seconds (healthy)    8000/tcp
+redis           redis:8.2-alpine           Up 5 minutes (healthy)    6379/tcp
 
 NAME                         MEM USAGE / LIMIT
-shop-micro-auth-1            52.45MiB / 128MiB
-shop-micro-catalog-1         52.23MiB / 128MiB
-shop-micro-gateway-1         12.68MiB / 32MiB
-shop-micro-notifications-1   59.89MiB / 128MiB
-shop-micro-orders-1          76.48MiB / 128MiB
-shop-micro-payments-1        59.9MiB / 128MiB
-shop-micro-redis-1           9.812MiB / 64MiB
+shop-micro-auth-1            43MiB / 128MiB
+shop-micro-catalog-1         57.43MiB / 128MiB
+shop-micro-gateway-1         13.56MiB / 32MiB
+shop-micro-notifications-1   52.82MiB / 128MiB
+shop-micro-orders-1          58.19MiB / 128MiB
+shop-micro-payments-1        53.43MiB / 128MiB
+shop-micro-redis-1           8.961MiB / 64MiB

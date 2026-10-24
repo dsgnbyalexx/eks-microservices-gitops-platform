@@ -1,9 +1,19 @@
-# python scripts/resilience_experiment.py  (Docker Compose stack; real containers stopped and restarted)
+# python scripts/resilience_experiment.py  (Docker Compose, Alpine images, hard payment deadline; two consecutive runs)
+--- run 1
 A. notifications service stopped
-  order:                   HTTP 201  status=CONFIRMED  notification_sent=False  (4040 ms)
+  order:                   HTTP 201  status=CONFIRMED  notification_sent=False  (5060 ms)
 B. payments service stopped
-  order:                   HTTP 503  status=PAYMENT_ERROR  notification_sent=None  (8238 ms)
+  order:                   HTTP 503  status=PAYMENT_ERROR  notification_sent=None  (6018 ms)
 C. both services restarted
-  order:                   HTTP 201  status=CONFIRMED  notification_sent=True  (369 ms)
+  order:                   HTTP 201  status=CONFIRMED  notification_sent=True  (42 ms)
+
+3/3 scenarios behaved as designed
+--- run 2
+A. notifications service stopped
+  order:                   HTTP 201  status=CONFIRMED  notification_sent=False  (5040 ms)
+B. payments service stopped
+  order:                   HTTP 503  status=PAYMENT_ERROR  notification_sent=None  (6038 ms)
+C. both services restarted
+  order:                   HTTP 201  status=CONFIRMED  notification_sent=True  (83 ms)
 
 3/3 scenarios behaved as designed

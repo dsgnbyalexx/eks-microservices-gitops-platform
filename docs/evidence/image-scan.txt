@@ -1,0 +1,14 @@
+# Trivy 0.76.1 vulnerability scan of the five service images, 2026-10-24T03:35Z
+# Before (python:3.14-slim base): 164 known CVEs per image (44 HIGH, 58 MEDIUM, 61 LOW, 1 UNKNOWN), 0 with a fix available, 204 MB
+# After  (python:3.14-alpine base):
+shop/auth:local  OS=alpine 3.24.3  packages scanned=46  known vulnerabilities=0
+shop/catalog:local  OS=alpine 3.24.3  packages scanned=46  known vulnerabilities=0
+shop/orders:local  OS=alpine 3.24.3  packages scanned=46  known vulnerabilities=0
+shop/payments:local  OS=alpine 3.24.3  packages scanned=46  known vulnerabilities=0
+shop/notifications:local  OS=alpine 3.24.3  packages scanned=46  known vulnerabilities=0
+
+shop/auth:local  98.8MB
+shop/catalog:local  98.8MB
+shop/notifications:local  98.8MB
+shop/orders:local  98.9MB
+shop/payments:local  98.8MB

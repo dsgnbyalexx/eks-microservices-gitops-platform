@@ -2,15 +2,20 @@
 # One Dockerfile for all five services:
 #   docker build --build-arg SERVICE=orders -t shop/orders .
 
+# Base image: python:3.14-alpine. Measured with Trivy 0.76.1 on 2026-10-24:
+#   python:3.14-slim based image   -> 164 known CVEs (44 HIGH), none fixable, 204 MB
+#   python:3.14-alpine based image ->   0 known CVEs,               99 MB
+# All dependencies are pure Python, so musl (Alpine's C library) is not a concern.
+
 # ---- Stage 1: install dependencies into a virtual environment ----
-FROM python:3.14-slim AS build
+FROM python:3.14-alpine AS build
 RUN python -m venv /opt/venv
 COPY requirements.txt /tmp/requirements.txt
 RUN /opt/venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt \
  && /opt/venv/bin/pip uninstall -y pip
 
 # ---- Stage 2: small runtime image ----
-FROM python:3.14-slim
+FROM python:3.14-alpine
 ARG SERVICE
 ENV PATH=/opt/venv/bin:$PATH \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -24,7 +29,7 @@ RUN test -n "$SERVICE" || (echo "Build with --build-arg SERVICE=<name>" && exit 
 RUN rm -rf /usr/local/lib/python3.14/site-packages/pip \
            /usr/local/lib/python3.14/site-packages/pip-* \
            /usr/local/bin/pip* \
- && useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin app
+ && adduser -D -H -u 10001 -s /sbin/nologin app
 
 COPY --from=build /opt/venv /opt/venv
 WORKDIR /app

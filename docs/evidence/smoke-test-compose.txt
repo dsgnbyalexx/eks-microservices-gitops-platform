@@ -1,4 +1,4 @@
-# Compose smoke test re-run after the /internal/notifications change
+# python scripts/smoke_test.py  (Docker Compose, Alpine images)
 [PASS] wrong password is rejected (401)
 [PASS] login succeeds and returns a token
 [PASS] catalog lists products
@@ -6,7 +6,7 @@
 [PASS] order is placed and paid across orders -> catalog -> payments
 [PASS] total is computed from catalog prices
 [PASS] confirmation notification was sent
-[PASS] request id smoke-9b7694486487 is propagated
+[PASS] request id smoke-ee773f273595 is propagated
 [PASS] order can be read back (state shared via Redis)
 [PASS] declined card is handled (402, PAYMENT_DECLINED)
 [PASS] notification for the order is visible

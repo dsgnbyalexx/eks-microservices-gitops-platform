@@ -138,6 +138,58 @@ After a temporary `--set defaults.preStopSleepSeconds=0`, a plain `helm upgrade`
 `sleep 0`. With no new values supplied, Helm reuses the previous release's values.
 `--reset-values` restores the chart defaults, and the experiment script always uses it.
 
+---
+
+## 2026-10-24: Hardening before CI
+
+### Smaller base image: 164 known CVEs → 0
+
+A Trivy scan of the Debian-based images (`python:3.14-slim`) found **164 known
+vulnerabilities per image (44 HIGH)**. **None** had a fix available, so a "fail on
+fixable" gate would have passed; the count was still real exposure. Rebuilding on
+`python:3.14-alpine`:
+
+| | Debian slim | Alpine |
+|---|---|---|
+| Known vulnerabilities | 164 (44 HIGH) | **0** |
+| Image size | 204 MB | **99 MB** |
+| Memory per service (Compose) | ~50–80 MB | ~43–58 MB |
+
+The zero was double-checked: Trivy identified Alpine 3.24.3 and inventoried 46 packages
+per image ([image-scan.txt](image-scan.txt)).
+
+### Finding: Alpine exposed a hole in the retry deadline (found and fixed)
+
+After switching to Alpine, the "payments down" scenario returned a **504 from the gateway
+again**. Measured on the same Docker network, a failed DNS lookup of a stopped container
+takes **5.09 s with musl (Alpine)** vs **4.08 s with glibc (Debian)**.
+
+The Phase 1 deadline only prevented *starting* a new attempt. It could not cut short an
+attempt already stuck in DNS. Two 5.1 s attempts added up to 10.4 s, past the gateway's 10 s.
+
+**Fix:** each payment attempt now runs in a worker thread, and orders waits at most the
+**remaining** budget. The total is therefore bounded by 6 s regardless of DNS behaviour.
+An abandoned attempt that completes late is safe because of the idempotency key. The
+user's token and request id are captured before the thread starts, since worker threads
+cannot see Flask's request context. Two new unit tests cover both points (70 tests total).
+
+**Result:** "payments down" now answers with JSON 503 in **6.0 s** (two consecutive runs,
+3/3 scenarios each; [resilience-experiment.txt](resilience-experiment.txt)).
+
+**Remaining limitation:** with notifications down, an order takes ~5 s. That is one slow
+DNS lookup on a best-effort call: within all timeouts, but a queue or background send
+would remove it.
+
+### Finding: Redis restarted by its own liveness probe
+
+Kubernetes events showed `"redis-cli ping" timed out after 1s`, followed by a restart of a
+healthy Redis. exec probes start a process inside the container, which can exceed the
+**1 s default timeout** on a busy node. The probes now use explicit timeouts (readiness 3 s;
+liveness 5 s with 6 failures, about 1 minute, before a restart). After the change: 0
+restarts and 14/14 smoke checks on kind.
+
+---
+
 ### What this does NOT prove yet
 
 - Multi-node behaviour (pod spreading, PodDisruptionBudgets during node drains): kind runs

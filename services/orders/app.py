@@ -14,9 +14,11 @@ import os
 import re
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeout
 from datetime import UTC, datetime
 
-from flask import abort, g, jsonify, request
+from flask import abort, g, has_request_context, jsonify, request
 
 from common.app_factory import create_app
 from common.auth import require_auth
@@ -27,7 +29,10 @@ from common.store import redis_from_env
 MAX_ITEMS = 10
 MAX_QUANTITY = 10
 PRODUCT_ID_RE = re.compile(r"^[a-z0-9-]{1,40}$")
-PAYMENT_BUDGET_SECONDS = 6.0  # total for all payment attempts; gateway timeout is 10 s
+PAYMENT_BUDGET_SECONDS = 6.0  # hard total for all payment attempts; gateway timeout is 10 s
+# Runs payment attempts so they can be abandoned at the deadline. Sized to the
+# gunicorn thread count (4) so one pod cannot pile up unbounded waiting threads.
+_ATTEMPTS = ThreadPoolExecutor(max_workers=4, thread_name_prefix="payment-attempt")
 
 
 class Downstream:
@@ -68,20 +73,34 @@ class Downstream:
             "currency": currency,
             "card_token": card_token,
         }
-        # Overall deadline for ALL attempts. It must stay below the caller's timeout
+        # HARD deadline for ALL attempts. It must stay below the caller's timeout
         # (the gateway/ingress waits 10 s); otherwise the caller gives up first and
-        # never learns the outcome. Measured: a DNS lookup for a stopped container
-        # takes ~4 s, and request timeouts do not cover DNS.
+        # never learns the outcome. Request timeouts do not cover DNS: a lookup of a
+        # stopped container measured ~4.1 s (glibc) and ~5.1 s (musl/Alpine). So
+        # each attempt runs in a worker thread and we wait at most the REMAINING
+        # budget. An abandoned attempt that finishes late is harmless: the
+        # Idempotency-Key makes any later retry replay it instead of charging twice.
+        headers = {"Idempotency-Key": order_id}
+        if has_request_context():  # worker threads cannot see Flask's request data
+            headers["X-Request-ID"] = g.get("request_id", "")
+            if g.get("token"):
+                headers["Authorization"] = f"Bearer {g.token}"
+
         deadline = time.monotonic() + self.payment_budget_seconds
         for attempt in range(1, 4):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise DownstreamError("payment budget exhausted")
+            future = _ATTEMPTS.submit(
+                call, "POST", f"{self.payments_url}/payments", json=payload, headers=headers
+            )
             try:
-                response = call(
-                    "POST",
-                    f"{self.payments_url}/payments",
-                    json=payload,
-                    headers={"Idempotency-Key": order_id},
-                )
+                response = future.result(timeout=remaining)
                 return response.status_code, response.json()
+            except FutureTimeout:
+                raise DownstreamError(
+                    f"payment attempt {attempt} exceeded the remaining budget"
+                ) from None
             except DownstreamError:
                 pause = self.retry_delay * attempt
                 if attempt == 3 or time.monotonic() + pause >= deadline:

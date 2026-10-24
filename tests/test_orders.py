@@ -1,7 +1,10 @@
 """Orders orchestration, tested with a fake of the other services so every
 failure mode can be triggered on demand."""
 
+import time
+
 import pytest
+from flask import Flask, g
 
 from common.http_client import DownstreamError
 from helpers import bearer
@@ -169,6 +172,48 @@ def test_payment_retries_stop_at_the_overall_deadline(monkeypatch):
     with pytest.raises(DownstreamError):
         downstream.charge("ord_x", 1, "USD", "tok_visa")
     assert len(attempts) == 1, "no retry is started once the budget would be exceeded"
+
+
+def test_a_hanging_attempt_cannot_exceed_the_budget(monkeypatch):
+    """A single attempt stuck far longer than the budget (like a slow DNS lookup,
+    which request timeouts do not cover) is abandoned at the deadline."""
+
+    def hangs(*_args, **_kwargs):
+        time.sleep(2.0)
+        raise DownstreamError("too late")
+
+    monkeypatch.setattr(orders_module, "call", hangs)
+    downstream = Downstream("http://c", "http://p", "http://n", payment_budget_seconds=0.3)
+    started = time.monotonic()
+    with pytest.raises(DownstreamError, match="exceeded the remaining budget"):
+        downstream.charge("ord_x", 1, "USD", "tok_visa")
+    assert time.monotonic() - started < 1.0, "returned at the deadline, not after 2 s"
+
+
+def test_worker_thread_still_forwards_token_and_request_id(monkeypatch):
+    seen = {}
+
+    class Resp:
+        status_code = 201
+
+        @staticmethod
+        def json():
+            return {"payment_id": "pay_1"}
+
+    def capture(method, url, *, json=None, headers=None):
+        seen.update(headers)
+        return Resp()
+
+    monkeypatch.setattr(orders_module, "call", capture)
+    app = Flask("t")
+    with app.test_request_context():
+        g.request_id, g.token = "trace-42", "jwt-abc"
+        Downstream("http://c", "http://p", "http://n").charge("ord_1", 1, "USD", "tok_visa")
+    assert seen == {
+        "Idempotency-Key": "ord_1",
+        "X-Request-ID": "trace-42",
+        "Authorization": "Bearer jwt-abc",
+    }
 
 
 def test_payment_retries_give_up_after_three_attempts(monkeypatch):
