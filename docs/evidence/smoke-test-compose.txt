@@ -1,4 +1,4 @@
-# python scripts/smoke_test.py  (Docker Compose stack, through the nginx gateway)
+# Compose smoke test re-run after the /internal/notifications change
 [PASS] wrong password is rejected (401)
 [PASS] login succeeds and returns a token
 [PASS] catalog lists products
@@ -6,11 +6,12 @@
 [PASS] order is placed and paid across orders -> catalog -> payments
 [PASS] total is computed from catalog prices
 [PASS] confirmation notification was sent
-[PASS] request id smoke-e90fb7ef4156 is propagated
+[PASS] request id smoke-9b7694486487 is propagated
 [PASS] order can be read back (state shared via Redis)
 [PASS] declined card is handled (402, PAYMENT_DECLINED)
 [PASS] notification for the order is visible
 [PASS] payments service is NOT exposed through the gateway
-[PASS] notifications cannot be created from outside (403)
+[PASS] public /notifications is read-only (405 for POST)
+[PASS] internal endpoints are NOT exposed (/internal/* -> 404)
 
-13/13 checks passed against http://127.0.0.1:18090
+14/14 checks passed against http://127.0.0.1:18090

@@ -1,0 +1,28 @@
+# Traefik ingress controller for the local kind cluster.
+#   helm upgrade --install traefik traefik/traefik --version 42.1.3 \
+#     -n traefik --create-namespace -f k8s/traefik-values.yaml --wait
+#
+# Why Traefik: ingress-nginx was retired (archived; maintenance ended March 2026).
+# The app chart uses the standard Kubernetes Ingress API, so on EKS this can be
+# swapped for the AWS Load Balancer Controller without changing the app.
+service:
+  spec:
+    type: NodePort
+ports:
+  web:
+    nodePort: 30080        # mapped to 127.0.0.1:18080 by k8s/kind-config.yaml
+  websecure:
+    expose:
+      default: false       # no TLS locally
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+accessLog:
+  enabled: true
+  format: json

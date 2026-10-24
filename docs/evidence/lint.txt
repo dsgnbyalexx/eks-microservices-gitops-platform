@@ -2,4 +2,4 @@
 $ ruff check .
 All checks passed!
 $ ruff format --check .
-25 files already formatted
+27 files already formatted

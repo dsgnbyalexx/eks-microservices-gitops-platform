@@ -1,0 +1,131 @@
+{{- /*
+One Deployment + one Service per microservice, generated from .Values.services.
+*/ -}}
+{{- range $name, $svc := .Values.services }}
+{{- $replicas := default $.Values.defaults.replicas $svc.replicas }}
+{{- $resources := default $.Values.defaults.resources $svc.resources }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "shop.labels" $ | nindent 4 }}
+    {{- include "shop.selector" $name | nindent 4 }}
+spec:
+  replicas: {{ $replicas }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      {{- include "shop.selector" $name | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0    # never remove an old pod before its replacement is ready
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        {{- include "shop.labels" $ | nindent 8 }}
+        {{- include "shop.selector" $name | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false   # the app never calls the Kubernetes API
+      terminationGracePeriodSeconds: {{ $.Values.defaults.terminationGracePeriodSeconds }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: {{ $name }}
+          image: {{ include "shop.image" (dict "root" $ "name" $name) }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            {{- range $key, $value := $svc.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- if $svc.redis }}
+            - name: REDIS_URL
+              value: redis://redis:6379/0
+            {{- end }}
+            {{- range $key := $svc.secretEnv }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.existingSecret }}
+                  key: {{ $key }}
+            {{- end }}
+          # Startup: give the process time to boot before liveness checks begin.
+          startupProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 2
+            failureThreshold: 30
+          # Liveness: restart the container if the process is stuck.
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          # Readiness: only send traffic when the service's own dependencies work.
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          lifecycle:
+            # Wait a few seconds after removal from load balancing before SIGTERM,
+            # so requests already routed to this pod still get answered.
+            preStop:
+              exec:
+                command: ["sleep", "{{ $.Values.defaults.preStopSleepSeconds }}"]
+          resources:
+            {{- toYaml $resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "shop.labels" $ | nindent 4 }}
+    {{- include "shop.selector" $name | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "shop.selector" $name | nindent 4 }}
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+{{- if and $.Values.podDisruptionBudget.enabled (gt (int $replicas) 1) }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "shop.labels" $ | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "shop.selector" $name | nindent 6 }}
+{{- end }}
+{{- end }}

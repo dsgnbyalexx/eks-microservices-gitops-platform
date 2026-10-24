@@ -1,0 +1,20 @@
+# Helm chart static validation, 2026-10-24T02:48Z
+
+$ helm lint helm/shop --strict
+==> Linting helm/shop
+[INFO] Chart.yaml: icon is recommended
+
+1 chart(s) linted, 0 chart(s) failed
+
+$ helm lint helm/shop --strict -f helm/shop/values-kind.yaml
+1 chart(s) linted, 0 chart(s) failed
+
+$ helm template shop helm/shop | kubeconform -strict -kubernetes-version 1.37.0
+Summary: 25 resources found in 1 file - Valid: 25, Invalid: 0, Errors: 0, Skipped: 0
+
+# Objects rendered:
+      6 kind: Deployment
+      1 kind: Ingress
+      7 kind: NetworkPolicy
+      5 kind: PodDisruptionBudget
+      6 kind: Service

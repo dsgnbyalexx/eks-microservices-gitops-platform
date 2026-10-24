@@ -1,8 +1,8 @@
-# pytest 9.1.1, Python 3.14.7, fakeredis 2.40.0. 2026-10-24T01:47Z
+# pytest 9.1.1, Python 3.14.7, fakeredis 2.40.0. 2026-10-24T02:53Z
 # Command: python -m pytest -v --cov --cov-report=term-missing
 
 ============================= test session starts =============================
-collecting ... collected 67 items
+collecting ... collected 68 items
 
 tests/test_auth_catalog_notifications.py::test_login_returns_a_verifiable_token PASSED
 tests/test_auth_catalog_notifications.py::test_bad_credentials_get_the_same_401[wrong-password] PASSED
@@ -16,6 +16,7 @@ tests/test_auth_catalog_notifications.py::test_only_the_last_100_notifications_a
 tests/test_auth_catalog_notifications.py::test_invalid_notifications_are_rejected[payload0] PASSED
 tests/test_auth_catalog_notifications.py::test_invalid_notifications_are_rejected[payload1] PASSED
 tests/test_auth_catalog_notifications.py::test_invalid_notifications_are_rejected[payload2] PASSED
+tests/test_auth_catalog_notifications.py::test_public_notifications_path_is_read_only PASSED
 tests/test_auth_catalog_notifications.py::test_notifications_require_a_token PASSED
 tests/test_auth_catalog_notifications.py::test_readiness_follows_redis PASSED
 tests/test_common.py::test_liveness_never_checks_dependencies PASSED
@@ -88,11 +89,11 @@ services\common\http_client.py          17      3      6      1    74%   22-24
 services\common\logs.py                  6      0      0      0   100%
 services\common\store.py                 6      1      0      0    83%   10
 services\notifications\__init__.py       0      0      0      0   100%
-services\notifications\app.py           31      1      4      1    94%   29
+services\notifications\app.py           31      1      4      1    94%   35
 services\orders\__init__.py              0      0      0      0   100%
 services\orders\app.py                 123      8     30      2    92%   52, 59-62, 90, 93, 183
 services\payments\__init__.py            0      0      0      0   100%
 services\payments\app.py                60      0     20      0   100%
 --------------------------------------------------------------------------------
 TOTAL                                  379     13     76      4    95%
-============================= 67 passed in 2.56s ==============================
+============================= 68 passed in 7.28s ==============================

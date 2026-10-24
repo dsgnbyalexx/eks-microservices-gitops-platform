@@ -1,0 +1,77 @@
+{{- /*
+Zero-trust networking inside the namespace:
+  1. deny ALL incoming traffic to every pod by default;
+  2. allow the ingress controller to reach only the publicly routed services;
+  3. allow each service only the callers it needs (e.g. only orders -> payments);
+  4. allow only the services that use Redis to reach Redis.
+*/ -}}
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  labels:
+    {{- include "shop.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+{{- range $name, $svc := .Values.services }}
+{{- $callers := list }}
+{{- range $caller, $c := $.Values.services }}
+{{- if has $name (default (list) $c.calls) }}
+{{- $callers = append $callers $caller }}
+{{- end }}
+{{- end }}
+{{- if or $svc.ingressPaths $callers }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-{{ $name }}
+  labels:
+    {{- include "shop.labels" $ | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "shop.selector" $name | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - ports:
+        - port: 8000
+      from:
+        {{- if $svc.ingressPaths }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $.Values.networkPolicy.ingressControllerNamespace }}
+        {{- end }}
+        {{- range $callers }}
+        - podSelector:
+            matchLabels:
+              {{- include "shop.selector" . | nindent 14 }}
+        {{- end }}
+{{- end }}
+{{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-redis
+  labels:
+    {{- include "shop.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "shop.selector" "redis" | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - ports:
+        - port: 6379
+      from:
+        {{- range $name, $svc := .Values.services }}
+        {{- if $svc.redis }}
+        - podSelector:
+            matchLabels:
+              {{- include "shop.selector" $name | nindent 14 }}
+        {{- end }}
+        {{- end }}
+{{- end }}

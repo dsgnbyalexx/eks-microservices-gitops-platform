@@ -1,0 +1,8 @@
+shop {{ .Chart.AppVersion }} installed in namespace {{ .Release.Namespace }}.
+
+Check the rollout:
+  kubectl -n {{ .Release.Namespace }} get pods
+
+On the local kind cluster the API is at http://127.0.0.1:18080 :
+  curl http://127.0.0.1:18080/catalog/products
+  SMOKE_BASE_URL=http://127.0.0.1:18080 python scripts/smoke_test.py

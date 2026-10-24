@@ -1,0 +1,80 @@
+# Default values for the local kind cluster. Override per environment, e.g.
+#   helm upgrade --install shop helm/shop -n shop -f values-eks.yaml
+
+image:
+  # Empty for kind (images loaded with `kind load`). On EKS: the ECR registry,
+  # e.g. 123456789012.dkr.ecr.us-east-1.amazonaws.com
+  registry: ""
+  repositoryPrefix: shop
+  tag: local
+  pullPolicy: IfNotPresent
+
+# Secrets are NOT stored in this chart. Create the Secret separately
+# (see README), e.g. from AWS Secrets Manager via External Secrets on EKS.
+# It must contain the keys AUTH_SECRET_KEY and DEMO_PASSWORD.
+existingSecret: shop-secrets
+
+# Defaults applied to every service unless overridden below.
+defaults:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      memory: 128Mi    # no CPU limit on purpose: it causes throttling; requests guarantee a share
+  terminationGracePeriodSeconds: 30
+  preStopSleepSeconds: 5
+
+services:
+  auth:
+    secretEnv: [AUTH_SECRET_KEY, DEMO_PASSWORD]
+    env:
+      DEMO_USERNAME: demo
+    ingressPaths:
+      - { path: /auth, pathType: Prefix }
+  catalog:
+    ingressPaths:
+      - { path: /catalog, pathType: Prefix }
+  orders:
+    secretEnv: [AUTH_SECRET_KEY]
+    redis: true
+    env:
+      CATALOG_URL: http://catalog:8000
+      PAYMENTS_URL: http://payments:8000
+      NOTIFICATIONS_URL: http://notifications:8000
+    ingressPaths:
+      - { path: /orders, pathType: Prefix }
+    # Which other services this one may call (NetworkPolicy).
+    calls: [catalog, payments, notifications]
+  payments:
+    secretEnv: [AUTH_SECRET_KEY]
+    redis: true
+    ingressPaths: []          # internal only: not reachable from outside
+  notifications:
+    secretEnv: [AUTH_SECRET_KEY]
+    redis: true
+    ingressPaths:
+      - { path: /notifications, pathType: Exact }   # read path only; /internal/* never routed
+
+redis:
+  image: redis:8.2-alpine
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      memory: 64Mi
+
+ingress:
+  enabled: true
+  className: ""   # empty = cluster default (Traefik on kind; "alb" on EKS)
+  host: ""        # empty = any host
+
+podDisruptionBudget:
+  enabled: true   # created for services running more than one replica
+
+networkPolicy:
+  enabled: true
+  # Namespace of the ingress controller allowed to reach public services.
+  ingressControllerNamespace: traefik

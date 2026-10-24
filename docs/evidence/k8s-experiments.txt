@@ -1,0 +1,27 @@
+# Kubernetes behaviour experiments on the local kind cluster (Kubernetes v1.37.0), 2026-10-24.
+# Output copied verbatim from the terminal runs (commands in docs/evidence/README.md).
+
+=== A. Self-healing: delete an orders pod ===
+  deleted orders-8f7f99f4-4xskd; deployment back to 2/2 ready after ~9s
+
+=== B. NetworkPolicy enforcement (pod-to-pod connections) ===
+  orders  -> payments:8000  ALLOWED   (expected ALLOWED)
+  catalog -> payments:8000  BLOCKED (TimeoutError)   (expected BLOCKED)
+  auth    -> payments:8000  BLOCKED (TimeoutError)   (expected BLOCKED)
+  orders  -> redis:6379     ALLOWED   (expected ALLOWED)
+  catalog -> redis:6379     BLOCKED (TimeoutError)   (expected BLOCKED)
+
+=== C. Pod Security Admission: try a pod that runs as root ===
+Error from server (Forbidden): pods "psa-test" is forbidden: violates PodSecurity "restricted:latest": allowPrivilegeEscalation != false (container "psa-test" must set securityContext.allowPrivilegeEscalation=false), unrestricted ...
+
+=== D. Redis outage: readiness vs liveness ===
+before: ready(orders,payments,notifications)=[1/1 1/1 1/1 1/1]  total restarts=0
+Redis scaled to 0; waiting 25 s for probes to notice...
+during outage:
+  ready(orders,payments,notifications) = [0/1 0/1 0/1 0/1]   (expected all 0/1: removed from traffic)
+  total restarts                       = 0   (expected unchanged: liveness ignores Redis)
+  ready(catalog)                       = [1/1 1/1]   (expected 1/1: does not use Redis)
+  GET /catalog/products               -> 200 (expected 200)
+  GET /orders/x                       -> 503 (expected 503: no ready orders pods)
+deployment "redis" successfully rolled out
+after recovery: ready=[1/1 1/1 1/1 1/1]  total restarts=0

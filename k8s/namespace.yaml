@@ -1,0 +1,13 @@
+# Namespace with Pod Security Admission set to "restricted": Kubernetes itself
+# REJECTS any pod that runs as root, allows privilege escalation, keeps Linux
+# capabilities, or lacks a seccomp profile.
+#   kubectl apply -f k8s/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shop
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/audit: restricted

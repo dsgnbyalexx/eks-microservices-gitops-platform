@@ -1,0 +1,3 @@
+# scripts/rollout_experiment.sh <preStop seconds>  (75 s of traffic at 10 request-pairs/s while orders and catalog are restarted)
+preStop=0s | requests: 1490  failed: 16  success: 98.93%  failures by reason: {'502': 16} | traefik restarts 0->0 | memory pressure avg10=0.35 -> avg10=0.05 | VALID
+preStop=5s | requests: 1442  failed: 0  success: 100.00%  failures by reason: {} | traefik restarts 0->0 | memory pressure avg10=0.13 -> avg10=0.06 | VALID

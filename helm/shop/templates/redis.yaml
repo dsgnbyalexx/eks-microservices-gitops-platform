@@ -1,0 +1,74 @@
+{{- /*
+Single Redis instance for shared demo state. No persistence or replication:
+on EKS this would be a managed service (Amazon ElastiCache) instead.
+*/ -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    {{- include "shop.labels" . | nindent 4 }}
+    {{- include "shop.selector" "redis" | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate    # never run two independent Redis copies at once
+  selector:
+    matchLabels:
+      {{- include "shop.selector" "redis" | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "shop.labels" . | nindent 8 }}
+        {{- include "shop.selector" "redis" | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999      # the "redis" user in the official image
+        runAsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image }}
+          imagePullPolicy: IfNotPresent
+          args: ["redis-server", "--save", "", "--appendonly", "no"]
+          ports:
+            - name: redis
+              containerPort: 6379
+          readinessProbe:
+            exec: { command: ["redis-cli", "ping"] }
+            periodSeconds: 5
+          livenessProbe:
+            exec: { command: ["redis-cli", "ping"] }
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir:
+            sizeLimit: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  labels:
+    {{- include "shop.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "shop.selector" "redis" | nindent 4 }}
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis

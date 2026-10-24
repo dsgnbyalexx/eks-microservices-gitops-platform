@@ -1,0 +1,14 @@
+# Overrides for the local kind cluster on a small machine (Docker VM ~2.8 GB).
+#   helm upgrade --install shop helm/shop -n shop -f helm/shop/values-kind.yaml
+#
+# Measured on the development machine: with 2 replicas of everything, back-to-back
+# rolling updates pushed the VM into swap (36 MB free, memory-pressure stalls) and
+# the ingress controller failed its liveness probe. orders and catalog keep 2
+# replicas (they are the ones exercised in rollout experiments); the others run 1.
+services:
+  auth:
+    replicas: 1
+  payments:
+    replicas: 1
+  notifications:
+    replicas: 1

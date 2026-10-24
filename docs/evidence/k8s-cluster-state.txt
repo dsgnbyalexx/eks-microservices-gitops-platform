@@ -1,0 +1,58 @@
+# Cluster state (kind, Kubernetes v1.37.0), 2026-10-24T02:49Z
+
+NAME                 STATUS   ROLES           AGE   VERSION
+shop-control-plane   Ready    control-plane   46m   v1.37.0
+
+NAME                            READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/auth            1/1     1            1           36m
+deployment.apps/catalog         2/2     2            2           36m
+deployment.apps/notifications   1/1     1            1           36m
+deployment.apps/orders          2/2     2            2           36m
+deployment.apps/payments        1/1     1            1           36m
+deployment.apps/redis           1/1     1            1           36m
+
+NAME                                READY   STATUS    RESTARTS   AGE
+pod/auth-846c7cfd5-bbk5s            1/1     Running   0          5m17s
+pod/catalog-695f474f79-9fvf7        1/1     Running   0          3m42s
+pod/catalog-695f474f79-grmqh        1/1     Running   0          3m33s
+pod/notifications-f89ff87f8-bsxbx   1/1     Running   0          5m16s
+pod/orders-8f7f99f4-wf57l           1/1     Running   0          2m4s
+pod/orders-8f7f99f4-wl46s           1/1     Running   0          3m42s
+pod/payments-544dc9b4dc-pkkwb       1/1     Running   0          5m16s
+pod/redis-bf7d69f57-6fpsl           1/1     Running   0          53s
+
+NAME                    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+service/auth            ClusterIP   10.96.62.31     <none>        8000/TCP   36m
+service/catalog         ClusterIP   10.96.138.105   <none>        8000/TCP   36m
+service/notifications   ClusterIP   10.96.244.220   <none>        8000/TCP   36m
+service/orders          ClusterIP   10.96.132.18    <none>        8000/TCP   36m
+service/payments        ClusterIP   10.96.15.60     <none>        8000/TCP   36m
+service/redis           ClusterIP   10.96.160.211   <none>        6379/TCP   36m
+
+NAME                             CLASS     HOSTS   ADDRESS   PORTS   AGE
+ingress.networking.k8s.io/shop   traefik   *                 80      36m
+
+NAME                                 MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+poddisruptionbudget.policy/catalog   1               N/A               1                     36m
+poddisruptionbudget.policy/orders    1               N/A               1                     36m
+
+NAME                                                     POD-SELECTOR                                                            AGE
+networkpolicy.networking.k8s.io/allow-to-auth            app.kubernetes.io/component=auth,app.kubernetes.io/name=shop            36m
+networkpolicy.networking.k8s.io/allow-to-catalog         app.kubernetes.io/component=catalog,app.kubernetes.io/name=shop         36m
+networkpolicy.networking.k8s.io/allow-to-notifications   app.kubernetes.io/component=notifications,app.kubernetes.io/name=shop   36m
+networkpolicy.networking.k8s.io/allow-to-orders          app.kubernetes.io/component=orders,app.kubernetes.io/name=shop          36m
+networkpolicy.networking.k8s.io/allow-to-payments        app.kubernetes.io/component=payments,app.kubernetes.io/name=shop        36m
+networkpolicy.networking.k8s.io/allow-to-redis           app.kubernetes.io/component=redis,app.kubernetes.io/name=shop           36m
+networkpolicy.networking.k8s.io/default-deny-ingress     <none>                                                                  36m
+
+# Namespace Pod Security labels:
+{"kubernetes.io/metadata.name":"shop","pod-security.kubernetes.io/audit":"restricted","pod-security.kubernetes.io/enforce":"restricted","pod-security.kubernetes.io/enforce-version":"latest","pod-security.kubernetes.io/warn":"restricted"}
+
+# Ingress controller:
+NAME                           READY   STATUS    RESTARTS   AGE
+pod/traefik-566dcfc67b-dc92p   1/1     Running   0          11m
+
+NAME              TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+service/traefik   NodePort   10.96.59.170   <none>        80:30080/TCP   44m
+
+# Docker VM memory: 1.546GiB / 2.766GiB used by the kind node

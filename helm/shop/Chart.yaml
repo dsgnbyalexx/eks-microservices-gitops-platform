@@ -1,0 +1,6 @@
+apiVersion: v2
+name: shop
+description: Five Flask microservices (auth, catalog, orders, payments, notifications) and Redis
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
