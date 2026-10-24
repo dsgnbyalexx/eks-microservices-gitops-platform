@@ -1,5 +1,11 @@
 """Notifications service: SIMULATED email. Messages are stored per user in Redis
-(newest first, last 100 kept) instead of being sent."""
+(newest first, last 100 kept) instead of being sent.
+
+  GET  /notifications           public: a user reads their own messages
+  POST /internal/notifications  internal: only other services (orders) create them.
+                                The gateway/Ingress never routes /internal/*, so this
+                                separation works with any ingress controller.
+"""
 
 import json
 import uuid
@@ -18,7 +24,7 @@ def create(redis_client=None):
     store = redis_client or redis_from_env()
     app = create_app("notifications", readiness_check=lambda: store.ping())
 
-    @app.post("/notifications")
+    @app.post("/internal/notifications")
     @require_auth
     def send():
         body = request.get_json(silent=True) or {}

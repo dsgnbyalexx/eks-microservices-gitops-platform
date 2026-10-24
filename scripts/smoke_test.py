@@ -110,13 +110,11 @@ def main() -> int:
     r = s.post(f"{BASE}/payments", json={}, headers=auth, timeout=TIMEOUT)
     check(r.status_code == 404, "payments service is NOT exposed through the gateway")
 
-    r = s.post(
-        f"{BASE}/notifications",
-        json={"subject": "spoof", "body": ""},
-        headers=auth,
-        timeout=TIMEOUT,
-    )
-    check(r.status_code == 403, "notifications cannot be created from outside (403)")
+    spoof = {"subject": "spoof", "body": ""}
+    r = s.post(f"{BASE}/notifications", json=spoof, headers=auth, timeout=TIMEOUT)
+    check(r.status_code == 405, "public /notifications is read-only (405 for POST)")
+    r = s.post(f"{BASE}/internal/notifications", json=spoof, headers=auth, timeout=TIMEOUT)
+    check(r.status_code == 404, "internal endpoints are NOT exposed (/internal/* -> 404)")
 
     failed = [d for ok, d in results if not ok]
     print(f"\n{len(results) - len(failed)}/{len(results)} checks passed against {BASE}")

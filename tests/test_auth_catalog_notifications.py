@@ -68,7 +68,7 @@ def notifications(fake_redis):
 def test_notifications_are_stored_newest_first(notifications):
     for subject in ("first", "second"):
         r = notifications.post(
-            "/notifications", json={"subject": subject, "body": "hi"}, headers=bearer()
+            "/internal/notifications", json={"subject": subject, "body": "hi"}, headers=bearer()
         )
         assert r.status_code == 202
     listed = notifications.get("/notifications", headers=bearer()).json["notifications"]
@@ -77,7 +77,7 @@ def test_notifications_are_stored_newest_first(notifications):
 
 def test_users_only_see_their_own_notifications(notifications):
     notifications.post(
-        "/notifications", json={"subject": "for demo", "body": ""}, headers=bearer("demo")
+        "/internal/notifications", json={"subject": "for demo", "body": ""}, headers=bearer("demo")
     )
     assert notifications.get("/notifications", headers=bearer("eve")).json == {"notifications": []}
 
@@ -85,14 +85,22 @@ def test_users_only_see_their_own_notifications(notifications):
 def test_only_the_last_100_notifications_are_kept(notifications, fake_redis):
     for i in range(KEEP_LAST + 5):
         notifications.post(
-            "/notifications", json={"subject": f"n{i}", "body": ""}, headers=bearer()
+            "/internal/notifications", json={"subject": f"n{i}", "body": ""}, headers=bearer()
         )
     assert fake_redis.llen("notifications:demo") == KEEP_LAST
 
 
 @pytest.mark.parametrize("payload", [{}, {"subject": ""}, {"subject": "x" * 201, "body": ""}])
 def test_invalid_notifications_are_rejected(notifications, payload):
-    assert notifications.post("/notifications", json=payload, headers=bearer()).status_code == 400
+    assert (
+        notifications.post("/internal/notifications", json=payload, headers=bearer()).status_code
+        == 400
+    )
+
+
+def test_public_notifications_path_is_read_only(notifications):
+    response = notifications.post("/notifications", json={"subject": "x"}, headers=bearer())
+    assert response.status_code == 405
 
 
 def test_notifications_require_a_token(notifications):

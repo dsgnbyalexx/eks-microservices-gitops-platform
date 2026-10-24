@@ -92,7 +92,7 @@ class Downstream:
     def notify(self, subject: str, body: str) -> None:
         call(
             "POST",
-            f"{self.notifications_url}/notifications",
+            f"{self.notifications_url}/internal/notifications",
             json={"subject": subject, "body": body},
         )
 
