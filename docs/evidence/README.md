@@ -190,6 +190,53 @@ restarts and 14/14 smoke checks on kind.
 
 ---
 
+## 2026-10-24: CI on GitHub, including end-to-end on kind
+
+The workflow passes actionlint (with ShellCheck on every `run:` step).
+
+### First run: failed in the end-to-end smoke test (found and fixed)
+
+[Run 40059208487](https://github.com/dsgnbyalexx/eks-microservices-gitops-platform/actions/runs/40059208487):
+8/9 jobs passed. The e2e smoke test failed on `/orders`. Traefik's access log, from the
+job's own failure diagnostics, showed:
+
+| Time (UTC) | Event |
+|---|---|
+| 03:41:47.90 | `helm --wait` reports the release deployed (all pods ready) |
+| 03:41:48.52 | `POST /orders` → **503, no backend**. Traefik had not yet learned the new orders pods' addresses; auth and catalog were already routed |
+
+**Lesson:** "pods ready" is not the same as "traffic reaches them". Endpoint updates reach
+the ingress controller a moment later.
+
+**Fix:** the smoke test waits until every public route answers as expected through the
+Ingress (`--wait-seconds`), prints the actual HTTP status on any failure, and tolerates
+non-JSON responses.
+
+### Second run: all jobs passed
+
+[Run 40059539217](https://github.com/dsgnbyalexx/eks-microservices-gitops-platform/actions/runs/40059539217),
+as reported by GitHub:
+
+| Job | Result | Duration |
+|---|---|---|
+| Python (lint, 70 tests) | ✅ | 20 s |
+| Images ×5 (build + Trivy gate) | ✅ | 39–47 s each |
+| Helm (lint + kubeconform) | ✅ | 7 s |
+| **End-to-end on kind** | ✅ | 248 s |
+
+End-to-end details from that run's log:
+
+```
+all public routes answering after 2.0s
+14/14 checks passed against http://127.0.0.1:18080
+preStop=5s | requests: 1500  failed: 0  success: 100.00% | traefik restarts 0->0 | VALID
+```
+
+The CI runner deploys the **production-like defaults** (2 replicas of every service), not
+the reduced kind values used on the small development machine.
+
+---
+
 ### What this does NOT prove yet
 
 - Multi-node behaviour (pod spreading, PodDisruptionBudgets during node drains): kind runs

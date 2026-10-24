@@ -1,12 +1,15 @@
 # Kubernetes Microservices Platform (EKS-ready, GitOps)
 
+[![CI](https://github.com/dsgnbyalexx/eks-microservices-gitops-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/dsgnbyalexx/eks-microservices-gitops-platform/actions/workflows/ci.yml)
+
 > Five lightweight Flask services (auth, catalog, orders, simulated payments,
 > notifications) packaged with Docker, designed to run on Kubernetes and move to
 > Amazon EKS with Argo CD.
 
-> **Status: work in progress.** Services, Docker Compose, and a Helm chart running on
-> local Kubernetes (kind) are built and tested. CI and EKS come next. Nothing is claimed
-> without evidence in [`docs/evidence/`](docs/evidence/).
+> **Status: work in progress.** Services, Docker Compose, a Helm chart on Kubernetes, and
+> CI that deploys to a fresh kind cluster on every push are built and passing. **EKS,
+> Argo CD, and Prometheus/Grafana are not built yet.** Nothing is claimed without
+> evidence in [`docs/evidence/`](docs/evidence/).
 
 ## Project status
 
@@ -19,7 +22,8 @@
 | Helm chart on local Kubernetes (kind 1.37): probes, limits, PDBs, NetworkPolicies, Pod Security "restricted" | ✅ Deployed, 14/14 smoke checks via Ingress | [k8s evidence](docs/evidence/README.md#2026-10-24-phase-2-helm-chart-on-local-kubernetes-kind) |
 | Zero-downtime rolling update (0 of 1,442 requests failed; control without preStop: 16 failed) | ✅ Measured | [rollout-experiment.txt](docs/evidence/rollout-experiment.txt) |
 | Self-healing, NetworkPolicy enforcement, readiness-vs-liveness during a Redis outage | ✅ Measured | [k8s-experiments.txt](docs/evidence/k8s-experiments.txt) |
-| GitHub Actions CI (lint, tests, image build + scan) | ⏳ Planned | — |
+| Container images: Alpine-based, 0 known CVEs (was 164 on Debian slim), 99 MB | ✅ Scanned | [image-scan.txt](docs/evidence/image-scan.txt) |
+| GitHub Actions CI: lint, 70 tests, 5 image scans, Helm validation, **end-to-end on kind** (smoke + zero-downtime rollout) | ✅ Passing on GitHub | [run 40059539217](https://github.com/dsgnbyalexx/eks-microservices-gitops-platform/actions/runs/40059539217), [all runs](https://github.com/dsgnbyalexx/eks-microservices-gitops-platform/actions/workflows/ci.yml) |
 | Amazon EKS, Argo CD GitOps, Prometheus/Grafana, IRSA / Pod Identity | 🗺️ Future | — |
 
 **Legend:** ✅ implemented & verified · 🧪 simulated locally · ⏳ planned for this phase · 🗺️ future enhancement
@@ -129,6 +133,22 @@ kind delete cluster --name shop        # tear everything down
 `values-kind.yaml` runs one replica of the services not under test, because the
 development machine's Docker VM (~2.8 GB) was memory-starved with two of everything
 (see the [evidence](docs/evidence/README.md#finding-overloaded-lab-machine-invalidated-the-first-experiment-runs)).
+
+## Continuous integration
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push and pull request.
+No cloud account is involved.
+
+| Job | Checks |
+|---|---|
+| **python** | ruff lint and format, 70 unit tests with coverage |
+| **images** (×5) | Build each service image; Trivy summary plus a gate on fixable HIGH/CRITICAL |
+| **helm** | `helm lint --strict` (default and kind values); kubeconform against Kubernetes 1.37 |
+| **e2e** | Create a kind cluster → install Traefik → build and load images → deploy the chart (2 replicas everywhere) → wait for Ingress routes → **14-check smoke test** → **zero-downtime rolling update under traffic** (fails if any request fails or the ingress restarts). Dumps pods, events and logs on failure |
+
+Hardening: a read-only `GITHUB_TOKEN`, SHA-pinned actions, random per-run secrets masked
+in logs, timeouts, and concurrency cancellation. Dependabot proposes weekly updates for
+pip, Docker, and Actions.
 
 ## Run it locally
 
