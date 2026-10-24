@@ -1,0 +1,7 @@
+# Runtime dependencies shared by all five services (pinned).
+flask==3.1.3
+gunicorn==26.2.0
+pyjwt==2.15.1
+redis==8.1.0
+requests==2.34.2
+prometheus-client==0.26.0

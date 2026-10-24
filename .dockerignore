@@ -1,0 +1,17 @@
+# Only requirements.txt and services/ are needed to build images.
+.git
+.github
+.venv
+.env
+.env.*
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+.coverage
+tests
+scripts
+docs
+gateway
+helm
+k8s

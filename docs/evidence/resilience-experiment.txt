@@ -1,0 +1,9 @@
+# python scripts/resilience_experiment.py  (Docker Compose stack; real containers stopped and restarted)
+A. notifications service stopped
+  order:                   HTTP 201  status=CONFIRMED  notification_sent=False  (4040 ms)
+B. payments service stopped
+  order:                   HTTP 503  status=PAYMENT_ERROR  notification_sent=None  (8238 ms)
+C. both services restarted
+  order:                   HTTP 201  status=CONFIRMED  notification_sent=True  (369 ms)
+
+3/3 scenarios behaved as designed

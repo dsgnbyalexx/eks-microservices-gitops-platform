@@ -1,0 +1,98 @@
+# pytest 9.1.1, Python 3.14.7, fakeredis 2.40.0. 2026-10-24T01:47Z
+# Command: python -m pytest -v --cov --cov-report=term-missing
+
+============================= test session starts =============================
+collecting ... collected 67 items
+
+tests/test_auth_catalog_notifications.py::test_login_returns_a_verifiable_token PASSED
+tests/test_auth_catalog_notifications.py::test_bad_credentials_get_the_same_401[wrong-password] PASSED
+tests/test_auth_catalog_notifications.py::test_bad_credentials_get_the_same_401[unknown-user] PASSED
+tests/test_auth_catalog_notifications.py::test_login_requires_both_fields PASSED
+tests/test_auth_catalog_notifications.py::test_auth_refuses_to_start_without_a_strong_password PASSED
+tests/test_auth_catalog_notifications.py::test_catalog_lists_and_gets_products PASSED
+tests/test_auth_catalog_notifications.py::test_notifications_are_stored_newest_first PASSED
+tests/test_auth_catalog_notifications.py::test_users_only_see_their_own_notifications PASSED
+tests/test_auth_catalog_notifications.py::test_only_the_last_100_notifications_are_kept PASSED
+tests/test_auth_catalog_notifications.py::test_invalid_notifications_are_rejected[payload0] PASSED
+tests/test_auth_catalog_notifications.py::test_invalid_notifications_are_rejected[payload1] PASSED
+tests/test_auth_catalog_notifications.py::test_invalid_notifications_are_rejected[payload2] PASSED
+tests/test_auth_catalog_notifications.py::test_notifications_require_a_token PASSED
+tests/test_auth_catalog_notifications.py::test_readiness_follows_redis PASSED
+tests/test_common.py::test_liveness_never_checks_dependencies PASSED
+tests/test_common.py::test_readiness_fails_when_dependency_is_down[<lambda>0] PASSED
+tests/test_common.py::test_readiness_fails_when_dependency_is_down[<lambda>1] PASSED
+tests/test_common.py::test_request_id_is_generated_or_propagated PASSED
+tests/test_common.py::test_metrics_use_route_templates_not_raw_paths PASSED
+tests/test_common.py::test_unexpected_errors_are_not_leaked PASSED
+tests/test_common.py::test_valid_token_is_accepted PASSED
+tests/test_common.py::test_missing_or_malformed_tokens_are_rejected[headers0] PASSED
+tests/test_common.py::test_missing_or_malformed_tokens_are_rejected[headers1] PASSED
+tests/test_common.py::test_missing_or_malformed_tokens_are_rejected[headers2] PASSED
+tests/test_common.py::test_bad_tokens_are_rejected[expired] PASSED
+tests/test_common.py::test_bad_tokens_are_rejected[wrong-key] PASSED
+tests/test_common.py::test_bad_tokens_are_rejected[wrong-audience] PASSED
+tests/test_common.py::test_bad_tokens_are_rejected[wrong-issuer] PASSED
+tests/test_common.py::test_bad_tokens_are_rejected[alg-none] PASSED
+tests/test_common.py::test_short_secret_is_refused PASSED
+tests/test_common.py::test_http_client_turns_network_errors_and_5xx_into_downstream_error PASSED
+tests/test_common.py::test_http_client_always_sets_a_timeout PASSED
+tests/test_orders.py::test_successful_order PASSED
+tests/test_orders.py::test_declined_payment_is_recorded PASSED
+tests/test_orders.py::test_payments_outage_is_recorded_not_lost PASSED
+tests/test_orders.py::test_notification_outage_does_not_fail_a_paid_order PASSED
+tests/test_orders.py::test_catalog_outage_creates_no_order PASSED
+tests/test_orders.py::test_unknown_product_and_mixed_currency_are_422 PASSED
+tests/test_orders.py::test_invalid_orders_are_rejected[empty] PASSED
+tests/test_orders.py::test_invalid_orders_are_rejected[zero-qty] PASSED
+tests/test_orders.py::test_invalid_orders_are_rejected[bool-qty] PASSED
+tests/test_orders.py::test_invalid_orders_are_rejected[bad-id] PASSED
+tests/test_orders.py::test_invalid_orders_are_rejected[duplicate] PASSED
+tests/test_orders.py::test_invalid_orders_are_rejected[no-card] PASSED
+tests/test_orders.py::test_other_users_cannot_see_an_order PASSED
+tests/test_orders.py::test_payment_call_is_retried_with_the_same_idempotency_key PASSED
+tests/test_orders.py::test_payment_retries_stop_at_the_overall_deadline PASSED
+tests/test_orders.py::test_payment_retries_give_up_after_three_attempts PASSED
+tests/test_payments.py::test_approved_charge PASSED
+tests/test_payments.py::test_declined_charges_return_402[body0-card declined] PASSED
+tests/test_payments.py::test_declined_charges_return_402[body1-over simulated limit] PASSED
+tests/test_payments.py::test_retry_with_same_key_replays_instead_of_charging_twice PASSED
+tests/test_payments.py::test_declines_are_replayed_too PASSED
+tests/test_payments.py::test_same_key_with_different_request_is_rejected PASSED
+tests/test_payments.py::test_keys_are_scoped_per_user PASSED
+tests/test_payments.py::test_concurrent_duplicate_loses_the_race_and_replays PASSED
+tests/test_payments.py::test_idempotency_key_is_required_and_validated[None] PASSED
+tests/test_payments.py::test_idempotency_key_is_required_and_validated[short] PASSED
+tests/test_payments.py::test_idempotency_key_is_required_and_validated[has spaces in it] PASSED
+tests/test_payments.py::test_idempotency_key_is_required_and_validated[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx] PASSED
+tests/test_payments.py::test_invalid_payment_requests[body0] PASSED
+tests/test_payments.py::test_invalid_payment_requests[body1] PASSED
+tests/test_payments.py::test_invalid_payment_requests[body2] PASSED
+tests/test_payments.py::test_invalid_payment_requests[body3] PASSED
+tests/test_payments.py::test_invalid_payment_requests[body4] PASSED
+tests/test_payments.py::test_invalid_payment_requests[body5] PASSED
+tests/test_payments.py::test_payments_require_a_token PASSED
+
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.7-final-0 _______________
+
+Name                                 Stmts   Miss Branch BrPart  Cover   Missing
+--------------------------------------------------------------------------------
+services\auth\__init__.py                0      0      0      0   100%
+services\auth\app.py                    32      0      6      0   100%
+services\catalog\__init__.py             0      0      0      0   100%
+services\catalog\app.py                 15      0      2      0   100%
+services\common\__init__.py              0      0      0      0   100%
+services\common\app_factory.py          52      0      4      0   100%
+services\common\auth.py                 37      0      4      0   100%
+services\common\http_client.py          17      3      6      1    74%   22-24
+services\common\logs.py                  6      0      0      0   100%
+services\common\store.py                 6      1      0      0    83%   10
+services\notifications\__init__.py       0      0      0      0   100%
+services\notifications\app.py           31      1      4      1    94%   29
+services\orders\__init__.py              0      0      0      0   100%
+services\orders\app.py                 123      8     30      2    92%   52, 59-62, 90, 93, 183
+services\payments\__init__.py            0      0      0      0   100%
+services\payments\app.py                60      0     20      0   100%
+--------------------------------------------------------------------------------
+TOTAL                                  379     13     76      4    95%
+============================= 67 passed in 2.56s ==============================

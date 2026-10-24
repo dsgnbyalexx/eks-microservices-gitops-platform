@@ -1,0 +1,85 @@
+# Local stack: gateway -> 5 services -> Redis. Settings come from .env
+# (copy .env.example to .env and fill in the two secrets first).
+name: shop-micro
+
+x-service: &service
+  # Same hardening the Kubernetes manifests will use.
+  read_only: true            # root filesystem is read-only
+  tmpfs: [/tmp]              # gunicorn needs a small writable temp dir
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: [ALL]
+  mem_limit: 128m
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=2)"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+  depends_on:
+    redis:
+      condition: service_healthy
+
+x-env: &env
+  AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:?Set AUTH_SECRET_KEY in .env (copy .env.example)}
+  REDIS_URL: redis://redis:6379/0
+
+services:
+  redis:
+    image: redis:8.2-alpine
+    # No persistence: Redis holds demo state only (documented limitation).
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    mem_limit: 64m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  auth:
+    <<: *service
+    image: shop/auth:local
+    build: { context: ., args: { SERVICE: auth } }
+    environment:
+      <<: *env
+      DEMO_USERNAME: demo
+      DEMO_PASSWORD: ${DEMO_PASSWORD:?Set DEMO_PASSWORD in .env (copy .env.example)}
+
+  catalog:
+    <<: *service
+    image: shop/catalog:local
+    build: { context: ., args: { SERVICE: catalog } }
+    environment: *env
+
+  payments:
+    <<: *service
+    image: shop/payments:local
+    build: { context: ., args: { SERVICE: payments } }
+    environment: *env
+
+  notifications:
+    <<: *service
+    image: shop/notifications:local
+    build: { context: ., args: { SERVICE: notifications } }
+    environment: *env
+
+  orders:
+    <<: *service
+    image: shop/orders:local
+    build: { context: ., args: { SERVICE: orders } }
+    environment:
+      <<: *env
+      CATALOG_URL: http://catalog:8000
+      PAYMENTS_URL: http://payments:8000
+      NOTIFICATIONS_URL: http://notifications:8000
+
+  gateway:
+    image: nginx:1.29-alpine
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:-18090}:8080"   # localhost only
+    volumes:
+      - ./gateway/default.conf:/etc/nginx/conf.d/default.conf:ro
+    mem_limit: 32m
+    depends_on:
+      auth: { condition: service_healthy }
+      catalog: { condition: service_healthy }
+      orders: { condition: service_healthy }
+      notifications: { condition: service_healthy }

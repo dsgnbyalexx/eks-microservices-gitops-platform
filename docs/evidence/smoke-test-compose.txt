@@ -1,0 +1,16 @@
+# python scripts/smoke_test.py  (Docker Compose stack, through the nginx gateway)
+[PASS] wrong password is rejected (401)
+[PASS] login succeeds and returns a token
+[PASS] catalog lists products
+[PASS] ordering without a token is rejected (401)
+[PASS] order is placed and paid across orders -> catalog -> payments
+[PASS] total is computed from catalog prices
+[PASS] confirmation notification was sent
+[PASS] request id smoke-e90fb7ef4156 is propagated
+[PASS] order can be read back (state shared via Redis)
+[PASS] declined card is handled (402, PAYMENT_DECLINED)
+[PASS] notification for the order is visible
+[PASS] payments service is NOT exposed through the gateway
+[PASS] notifications cannot be created from outside (403)
+
+13/13 checks passed against http://127.0.0.1:18090

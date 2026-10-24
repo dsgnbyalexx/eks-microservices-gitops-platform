@@ -1,0 +1,6 @@
+# One request (X-Request-ID: smoke-e90fb7ef4156) followed across services via their JSON logs
+orders         POST  /orders                      -> 201  (78.9 ms)
+catalog        GET   /catalog/products/mug        -> 200  (0.1 ms)
+catalog        GET   /catalog/products/hoodie     -> 200  (0.1 ms)
+payments       POST  /payments                    -> 201  (11.3 ms)
+notifications  POST  /notifications               -> 202  (7.9 ms)
