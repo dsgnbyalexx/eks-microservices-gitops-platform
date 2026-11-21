@@ -8,14 +8,14 @@
 # All dependencies are pure Python, so musl (Alpine's C library) is not a concern.
 
 # ---- Stage 1: install dependencies into a virtual environment ----
-FROM python:3.14-alpine AS build
+FROM python:3.15-alpine AS build
 RUN python -m venv /opt/venv
 COPY requirements.txt /tmp/requirements.txt
 RUN /opt/venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt \
  && /opt/venv/bin/pip uninstall -y pip
 
 # ---- Stage 2: small runtime image ----
-FROM python:3.14-alpine
+FROM python:3.15-alpine
 ARG SERVICE
 ENV PATH=/opt/venv/bin:$PATH \
     PYTHONDONTWRITEBYTECODE=1 \
